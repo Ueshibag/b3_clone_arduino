@@ -35,57 +35,54 @@
 
   drawbarIdx    anlgIdx    mux
   =============================
-        0           0       0       UM_1_1
+        0           0       0       UPKB REG1 RV1
         1           0       1
         2           0       2
         3           0       3
         4           0       4
         5           0       5
         6           0       6
-        7           0       7       UM_1_8
+        7           0       7
+        8           1       X       UPKB REG1 RV9
 
-        8           1       0       UM_1_9
-        9           1       1       UM_2_1
-       10           1       2
-       11           1       3
-       12           1       4
-       13           1       5
-       14           1       6
-       15           1       7       UM_2_7
+        9           2       0       UPKB REG2 RV1
+       10           2       1
+       11           2       2
+       12           2       3
+       13           2       4
+       14           2       5
+       15           2       6
+       16           2       7
+       17           3       0       UPKB REG2 RV9
+       18           3       1       PDKB      RV10
+       19           3       2       PDKB      RV11
 
-       16           2       0       UM_2_8
-       17           2       1       UM_2_9
-       18           2       2       PK_1
-       19           2       3       PK_2
-       20           2       4       LM_1_1
-       21           2       5
-       22           2       6
-       23           2       7       LM_1_4
+       20           4       0       LOKB REG1 RV1
+       21           4       1
+       22           4       2
+       23           4       3
+       24           4       4
+       25           4       5
+       26           4       6
+       27           4       7
+       28           5       X       LOKB REG1 RV9
 
-       24           3       0       LM_1_5
-       25           3       1
-       26           3       2
-       27           3       3
-       28           3       4       LM_1_9
-       29           3       5       LM_2_1
-       30           3       6
-       31           3       7       LM_2_3
-
-       32           4       0       LM_2_4
-       33           4       1
-       34           4       2
-       35           4       3
-       36           4       4
-       37           4       5       LM_2_9
-       38           4       6          X
-       39           4       7          X
+       29           6       0       LOKB REG2 RV1
+       30           6       1
+       31           6       2
+       32           6       3
+       33           6       4
+       34           6       5
+       35           6       6
+       36           6       7
+       37           7       X       LOKB REG2 RV9
 */
 
 // MIDI channels
 // Drawbars moves messages are not sent directly as MIDI messages to setBfree
 // because we have two sets of drawbars per manual keyboard and therefore we
 // want to know which set is in use. For that purpose, I assign temporary channels
-// to drawbars sets and the RPI JavaFX controller will manage the actual MIDI
+// to drawbars sets and the RPI Python controller will manage the actual MIDI
 // channel assignment to be sent to setBfree.
 #define UPPER_1 0
 #define UPPER_2 3
@@ -96,12 +93,6 @@
 #define NB_DRAWBARS 38
 #define ACK 0x06
 
-// Leslie constants
-#define LESLIE_COMMON_IDX 38
-#define LESLIE_STOP 52
-#define LESLIE_SLOW 53
-#define LESLIE_FAST 54
-
 #define CTRL_INIT 127
 
 // multiplexers controls
@@ -109,20 +100,23 @@ const int  MUX_A = 2; // D2
 const int  MUX_B = 3; // D3
 const int  MUX_C = 4; // D4
 
-// analog reading with average calculation
-int analogPins[5] = {A1, A2, A3, A4, A5};
+// selected registration LEDs controls
+const int UP_REG_LED = 5; // D5
+const int LO_REG_LED = 6; // D6
 
-// we have 38 drawbars and every one has 9 possible positions, which can be coded on one byte
+// analog reading with average calculation
+int analogPins[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
+
+// we have NB_DRAWBARS drawbars and every one has 9 possible positions, which can be coded on one byte
 // we send a MIDI message only when a drawbar position has changed
 byte pos_old[NB_DRAWBARS];
 byte pos_new[NB_DRAWBARS];
 
-// we send a Leslie MIDI Control Change message only when Leslie settings have changed
-byte leslie_old;
-byte leslie_new;
-
 //                    0    1   2   3   4   5   6   7  8
 byte dbar_pos[9] = {127, 110, 92, 79, 63, 47, 31, 15, 0};
+
+const bool INITIALIZING = true;
+const bool CHECKING = false;
 
 /*
    Arduino program setup. This function is executed only once.
@@ -138,22 +132,11 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
-  // wait for Raspberry PI so that setBfree can listen to MIDI messages
-  syncRPI();
-
   // the very first call to analogRead() after powering up returns junk,
   // this is a documented issue with the ATmega chips.
   int anlgMeasure = analogRead(analogPins[0]);
   
-  // read and send drawbars and Leslie initial positions
-  for (int mux = 0; mux < 8; mux++)
-  {
-    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
-    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
-    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
-
-    sendInitialControlsPositions(mux);
-  }
+  sendControlsPositions(INITIALIZING);
 }
 
 /*
@@ -162,131 +145,229 @@ void setup()
 void loop()
 {
   static unsigned long time = 0;
-  static byte mux = 0;
 
   if (time == 0)
-    time = micros();
+    time = millis();
 
-  unsigned long curTime = micros();
+  unsigned long curTime = millis();
 
-  // if 500us have elapsed, select a new mux
-  if (curTime > time + 2000)
+  // if 500ms have elapsed, read all drawbars again
+  if (curTime > time + 500)
   {
-    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
-    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
-    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
-
-    onControlsChange(mux);
-
+    sendControlsPositions(CHECKING);
     time = curTime;
 
-    if (++mux >= 8)
-      mux = 0;    // mux = 0, 1, 2, 3, 4, 5, 6, 7, 0, ...
+    readRaspberryPiCommand();
+  }
+}
+
+void readRaspberryPiCommand(void)
+{
+  if (Serial.available() > 0)
+  {
+    String cmd = Serial.readStringUntil('\n');
+    
+    if (cmd == "1")
+    {
+      digitalWrite(UP_REG_LED, HIGH);
+      digitalWrite(LO_REG_LED, HIGH);
+    }
+
+    else if (cmd == "2")
+    {
+      digitalWrite(UP_REG_LED, LOW);
+      digitalWrite(LO_REG_LED, LOW);
+    }
   }
 }
 
 void setupCtrlPins(void)
 {
-  pinMode(LED_BUILTIN, OUTPUT);
   pinMode(MUX_A, OUTPUT);
   pinMode(MUX_B, OUTPUT);
   pinMode(MUX_C, OUTPUT);
 
+  pinMode(UP_REG_LED, OUTPUT);
+  pinMode(LO_REG_LED, OUTPUT);
+
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  pinMode(A3, INPUT);
+  pinMode(A4, INPUT);
+  pinMode(A5, INPUT);
+  pinMode(A6, INPUT);
+  pinMode(A7, INPUT);  
+
   digitalWrite(MUX_A, LOW);
   digitalWrite(MUX_B, LOW);
   digitalWrite(MUX_C, LOW);
+
+  digitalWrite(UP_REG_LED, LOW);
+  digitalWrite(LO_REG_LED, LOW);
 
   for (int i = 0; i < NB_DRAWBARS; i++)
   {
     pos_old[i] = CTRL_INIT;
     pos_new[i] = CTRL_INIT;
   }
-
-  leslie_old = CTRL_INIT;
-  leslie_new = CTRL_INIT;
 }
 
 /*
-   Repeatidly sends a sync byte until RPI replies.
-*/
-void syncRPI()
-{
-  int rcv = 0;
-  do
-  {
-    // send Enquiry to RPI until it replies with ACK
-    while (Serial.available() <= 0)
-    {
-      Serial.write('E'); // 0x45
-      delay(300);
-    }
-    rcv = Serial.read();
-  }
-  while (rcv != ACK);
-}
-
-/*
-  We are reading drawbars and Leslie initial positions and therefore we send them
+  We are reading drawbars initial positions and therefore we send them
   without checking for positions changes.
-  Reads the 5 analog inputs of the ATMEGA4809 for each mux value.
+  Reads the 8 analog inputs of the ATMEGA4809 for each mux value.
   Sends MIDI control change message to the corresponding MIDI controller.
-
-  mux : multiplexer value used to read one analog value among eight
-        mux values are [0..7]
 */
-void sendInitialControlsPositions(byte mux)
+void sendControlsPositions(bool initializing)
 {
+  int ctrlIdx = 0;
+  int anlgMeasure = 0;
+
   //                       -- UPPER --    BASS    --- LOWER ---
   // drawbars array index [0..8][9..17] [18..19] [20..28][29..37]
-  int ctrlIdx = 0;
 
-  // read the 5 analog pins sequentially
-  for (byte anlgIdx = 0; anlgIdx <= 4; anlgIdx++)
+  // =================================  Board 1  ==================================
+  
+  for (int mux = 0; mux <= 7; mux++)
   {
-    ctrlIdx = anlgIdx * 8 + mux;
-    delayMicroseconds(300);
-    int anlgMeasure = analogRead(analogPins[anlgIdx]);
+    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
+    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
+    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
 
-    if (ctrlIdx < NB_DRAWBARS)
-    {
-      storeDrawbarPosition(anlgMeasure, ctrlIdx);
+    delay(10); // 10ms
+    anlgMeasure = analogRead(analogPins[0]);
+    storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+    if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
       onDrawbarMove(ctrlIdx);
-    }
-    else if (ctrlIdx == LESLIE_COMMON_IDX)
-    {
-      leslie_new = getLesliePosition(anlgMeasure);
-      onLeslieSwitchMove();
-    }
+
+    ctrlIdx++;      
   }
+
+  delay(10);
+  anlgMeasure = analogRead(analogPins[1]);
+  storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+  if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+    onDrawbarMove(ctrlIdx);
+
+  ctrlIdx++;
+  return;  
+  // =================================  Board 2  ==================================
+
+  for (int mux = 0; mux <= 7; mux++)
+  {
+    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
+    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
+    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
+
+    delay(10);
+    anlgMeasure = analogRead(analogPins[2]);
+    storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+    if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+      onDrawbarMove(ctrlIdx);
+
+    ctrlIdx++;
+  }
+
+  for (int mux = 0; mux <= 2; mux++)
+  {
+    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
+    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
+    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
+
+    delay(10);
+    anlgMeasure = analogRead(analogPins[3]);
+    storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+    if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+      onDrawbarMove(ctrlIdx);
+
+    ctrlIdx++;
+  } 
+
+  // =================================  Board 3  ==================================
+
+  for (int mux = 0; mux <= 7; mux++)
+  {
+    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
+    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
+    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
+
+    delay(10);
+    anlgMeasure = analogRead(analogPins[4]);
+    storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+    if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+      onDrawbarMove(ctrlIdx);
+
+    ctrlIdx++;      
+  }
+
+  delay(10);
+  anlgMeasure = analogRead(analogPins[5]);
+  storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+  if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+    onDrawbarMove(ctrlIdx);
+
+  ctrlIdx++;
+
+  // =================================  Board 4  ==================================
+
+  for (int mux = 0; mux <= 7; mux++)
+  {
+    digitalWrite(MUX_A, mux & 0x01 ? HIGH : LOW);
+    digitalWrite(MUX_B, mux & 0x02 ? HIGH : LOW);
+    digitalWrite(MUX_C, mux & 0x04 ? HIGH : LOW);
+
+    delay(10);
+    anlgMeasure = analogRead(analogPins[6]);
+    storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+    if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+      onDrawbarMove(ctrlIdx);
+
+    ctrlIdx++;
+  }
+
+  delay(10);
+  anlgMeasure = analogRead(analogPins[7]);
+  storeDrawbarPosition(anlgMeasure, ctrlIdx);
+
+  if ( (pos_new[ctrlIdx] != pos_old[ctrlIdx]) || initializing )
+    onDrawbarMove(ctrlIdx);
 }
 
 void storeDrawbarPosition(int anlgMeasure, int ctrlIdx)
 {
-  if (anlgMeasure >= 0 && anlgMeasure < 50)
+  if (anlgMeasure >= 0 && anlgMeasure <= 63)
     pos_new[ctrlIdx] = 0;
 
-  else if (anlgMeasure > 100 && anlgMeasure < 150)
+  else if (anlgMeasure >= 64 && anlgMeasure <= 191)
     pos_new[ctrlIdx] = 1;
 
-  else if (anlgMeasure > 220 && anlgMeasure < 280)
+  else if (anlgMeasure >= 192 && anlgMeasure <= 319)
     pos_new[ctrlIdx] = 2;
 
-  else if (anlgMeasure > 340 && anlgMeasure < 420)
+  else if (anlgMeasure >= 320 && anlgMeasure <= 447)
     pos_new[ctrlIdx] = 3;
 
-  else if (anlgMeasure > 430 && anlgMeasure < 530)
+  else if (anlgMeasure >= 448 && anlgMeasure <= 575)
     pos_new[ctrlIdx] = 4;
 
-  else if (anlgMeasure > 550 && anlgMeasure < 670)
+  else if (anlgMeasure >= 576 && anlgMeasure <= 703)
     pos_new[ctrlIdx] = 5;
 
-  else if (anlgMeasure > 700 && anlgMeasure < 790)
+  else if (anlgMeasure >= 704 && anlgMeasure <= 831)
     pos_new[ctrlIdx] = 6;
 
-  else if (anlgMeasure > 850 && anlgMeasure < 930)
+  else if (anlgMeasure >= 832 && anlgMeasure <= 959)
     pos_new[ctrlIdx] = 7;
 
-  else if (anlgMeasure > 990 && anlgMeasure < 1030)
+  else if (anlgMeasure >= 960 && anlgMeasure <= 1023)
     pos_new[ctrlIdx] = 8;
 }
 
@@ -304,66 +385,6 @@ void onDrawbarMove(int drawbarIdx)
   int dbarCode = getDrawbarCode(midiChnl, drawbarIdx);
   sendControlChange(midiChnl, dbarCode, dbar_pos[pos_new[drawbarIdx]]);
   pos_old[drawbarIdx] = pos_new[drawbarIdx];
-}
-
-byte getLesliePosition(int anlgMeasure)
-{
-  if (anlgMeasure >= 0 && anlgMeasure < 50)
-    return LESLIE_SLOW;
-
-  else if (anlgMeasure > 990 && anlgMeasure < 1030)
-    return LESLIE_FAST;
-
-  return LESLIE_STOP;
-}
-
-
-/*
-   Builds a Leslie MIDI Program Change message and sends it.
-*/
-void onLeslieSwitchMove()
-{
-  sendProgramChange(0, leslie_new);
-  leslie_old = leslie_new;
-}
-
-/*
-  Reads the 5 analog inputs of the ATMEGA4809 for each mux value.
-  If drawbar position has changed, sends MIDI control change message to the
-  corresponding MIDI controller.
-
-  mux : multiplexer value used to read one analog value among eight
-        mux values are [0..7]
-*/
-void onControlsChange(byte mux)
-{
-  //                       -- UPPER --    BASS    --- LOWER ---
-  // drawbars array index [0..8][9..17] [18..19] [20..28][29..37]
-  int ctrlIdx = 0;
-
-  // read the 5 analog pins sequentially
-  for (byte anlgIdx = 0; anlgIdx <= 4; anlgIdx++)
-  {
-    ctrlIdx = anlgIdx * 8 + mux;
-    delayMicroseconds(300);
-    int anlgMeasure = analogRead(analogPins[anlgIdx]);
-
-    if (ctrlIdx < NB_DRAWBARS)
-    {
-      storeDrawbarPosition(anlgMeasure, ctrlIdx);
-
-      if (pos_new[ctrlIdx] != pos_old[ctrlIdx])
-        onDrawbarMove(ctrlIdx);
-    }
-
-    else if (ctrlIdx == LESLIE_COMMON_IDX)
-    {
-      leslie_new = getLesliePosition(anlgMeasure);
-
-      if (leslie_new != leslie_old)
-        onLeslieSwitchMove();
-    }
-  }
 }
 
 /*
@@ -409,40 +430,22 @@ byte getMidiChannel(int drawbarIndex)
     return LOWER_2;
 }
 
-
 /*
-  Sends a MIDI Control Change message.
-
-   chnl     : MIDI channel (UPPER | PEDAL | LOWER)
-   dbar     : drawbar code or controller
-   pos      : drawbar position
+Sends MIDI Control Change messages with a trailing Line Feed.
+This is not a regular MIDI CC message.
+The LF character ensures a correct message detection on the RPI side which reads data asynchronously.
+These pseudo MIDI CC messages are not sent to setBfree directly. They are sent to the
+Python code running on the RPI which then builds the actual MIDI message and
+sends it to setBfree.
 */
-void sendControlChange(byte chnl, byte dbar, byte pos)
+void sendControlChange(byte channel, byte control, byte value)
 {
-  byte bytes[3];
-  bytes[0] = chnl;
-  bytes[1] = dbar;
-  bytes[2] = pos;
-  Serial.write(bytes, 3);
-
-  // printDebug(chnl, dbar, pos);
-}
-
-/*
-  Sends a MIDI Program Change message.
-  The first byte is a dummy one, necessary because the Raspberry PI serial reader
-  blocks until it receives 3 bytes from the Arduino.
-
-   chnl     : MIDI channel (UPPER | PEDAL | LOWER)
-   prog     : program to be changed
-*/
-void sendProgramChange(byte chnl, byte prog)
-{
-  byte bytes[3];
-  bytes[0] = 127;
-  bytes[1] = chnl;
-  bytes[2] = prog;
-  Serial.write(bytes, 3);
+    byte bytes[4];
+    bytes[0] = 0xB0 | channel;
+    bytes[1] = control;
+    bytes[2] = value;
+    bytes[3] = 0x0A; // new line
+    Serial.write(bytes, 4);
 }
 
 void printDebug(byte chnl, byte dbar, byte pos)
