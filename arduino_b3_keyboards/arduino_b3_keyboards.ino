@@ -51,14 +51,14 @@
 #define T6 A6
 #define T7 A7
 
-const int BRA = 1; // D1
-const int BRB = 2; // D2
-const int MKA = 3; // D3
-const int MKB = 4; // D4
+const int BRA = 1;  // D1
+const int BRB = 2;  // D2
+const int MKA = 3;  // D3
+const int MKB = 4;  // D4
 
-const int  MUX_A1 = 5; // D5
-const int  MUX_A2 = 6; // D6
-const int  MUX_A3 = 7; // D7
+const int MUX_A1 = 5;  // D5
+const int MUX_A2 = 6;  // D6
+const int MUX_A3 = 7;  // D7
 
 // snapshot value of all keyboards switches (KEYBOARDS_NB_PINS)
 static unsigned long old_value_g[MATRIX_NB_COLS];
@@ -66,95 +66,93 @@ static unsigned long old_value_g[MATRIX_NB_COLS];
 static byte note_on_sent_g[KEYBOARDS_NB_PINS / 8];
 static byte note_off_sent_g[KEYBOARDS_NB_PINS / 8];
 
-void setup()
-{
-  setupKeyboardsCtrlPins();
+void setup() {
 
-  keyboardsInit();
+    setupKeyboardsCtrlPins();
 
-  Serial.begin(115200);
+    keyboardsInit();
+
+    Serial.begin(115200);
 }
 
 /*
   Sets Arduino Nano Every board pins mode and initial state.
 */
-void setupKeyboardsCtrlPins(void)
-{
-  pinMode(T0, OUTPUT);
-  pinMode(T1, OUTPUT);
-  pinMode(T2, OUTPUT);
-  pinMode(T3, OUTPUT);
-  pinMode(T4, OUTPUT);
-  pinMode(T5, OUTPUT);
-  pinMode(T6, OUTPUT);
-  pinMode(T7, OUTPUT);
+void setupKeyboardsCtrlPins(void) {
 
-  digitalWrite(T0, LOW);
-  digitalWrite(T1, LOW);
-  digitalWrite(T2, LOW);
-  digitalWrite(T3, LOW);
-  digitalWrite(T4, LOW);
-  digitalWrite(T5, LOW);
-  digitalWrite(T6, LOW);
-  digitalWrite(T7, LOW);
+    pinMode(T0, OUTPUT);
+    pinMode(T1, OUTPUT);
+    pinMode(T2, OUTPUT);
+    pinMode(T3, OUTPUT);
+    pinMode(T4, OUTPUT);
+    pinMode(T5, OUTPUT);
+    pinMode(T6, OUTPUT);
+    pinMode(T7, OUTPUT);
 
-  pinMode(BRA, INPUT);
-  pinMode(MKA, INPUT);
-  pinMode(BRB, INPUT);
-  pinMode(MKB, INPUT);
+    digitalWrite(T0, LOW);
+    digitalWrite(T1, LOW);
+    digitalWrite(T2, LOW);
+    digitalWrite(T3, LOW);
+    digitalWrite(T4, LOW);
+    digitalWrite(T5, LOW);
+    digitalWrite(T6, LOW);
+    digitalWrite(T7, LOW);
 
-  pinMode(MUX_A1, OUTPUT);
-  pinMode(MUX_A2, OUTPUT);
-  pinMode(MUX_A3, OUTPUT);
+    pinMode(BRA, INPUT);
+    pinMode(MKA, INPUT);
+    pinMode(BRB, INPUT);
+    pinMode(MKB, INPUT);
 
-  digitalWrite(MUX_A1, LOW);
-  digitalWrite(MUX_A2, LOW);
-  digitalWrite(MUX_A3, LOW);
+    pinMode(MUX_A1, OUTPUT);
+    pinMode(MUX_A2, OUTPUT);
+    pinMode(MUX_A3, OUTPUT);
+
+    digitalWrite(MUX_A1, LOW);
+    digitalWrite(MUX_A2, LOW);
+    digitalWrite(MUX_A3, LOW);
 }
 
 /*
   Initializes keyboards scan engine.
 */
-void keyboardsInit(void)
-{
-  for (int column = 0; column < MATRIX_NB_COLS; column++)
-  {
-    // default buttons state is: released
-    old_value_g[column] = 0x00000000;
-  }
+void keyboardsInit(void) {
 
-  for (int i = 0; i < KEYBOARDS_NB_PINS / 8; i++)
-  {
-    note_on_sent_g[i] = 0x00;
-    note_off_sent_g[i] = 0x00;
-  }
+    for (int column = 0; column < MATRIX_NB_COLS; column++) {
+        // default buttons state is: released
+        old_value_g[column] = 0x00000000;
+    }
+
+    for (int i = 0; i < KEYBOARDS_NB_PINS / 8; i++) {
+        note_on_sent_g[i] = 0x00;
+        note_off_sent_g[i] = 0x00;
+    }
 }
 
-void loop()
-{
-  static unsigned long time = 0;
-  static unsigned int active_column = 0;
+void loop() {
 
-  if (time == 0)
-    time = micros();
+    static unsigned long time = 0;
+    static unsigned int active_column = 0;
 
-  unsigned long curTime = micros();
+    if (time == 0)
+        time = micros();
 
-  // if 100us have elapsed, select a new Fatar keyboard matrix column
-  if (curTime > time + 100)
-  {
-    selectKeyboardColumn(active_column);
+    unsigned long curTime = micros();
 
-    // read all switches of both keyboards at a time
-    byte switches[4];
-    readAllSwitches(switches);
+    // if 100us have elapsed, select a new Fatar keyboard matrix column
+    if (curTime > time + 100) {
+        selectKeyboardColumn(active_column);
 
-    lookForChanges(switches, active_column);
+        // read all switches of both keyboards at a time
+        byte switches[4];
+        readAllSwitches(switches);
 
-    time = curTime;
-    if (++active_column >= MATRIX_NB_COLS)
-      active_column = 0;
-  }
+        lookForChanges(switches, active_column);
+
+        time = curTime;
+
+        if (++active_column >= MATRIX_NB_COLS)
+            active_column = 0;
+    }
 }
 
 /*
@@ -162,16 +160,16 @@ void loop()
 
   column : the column to be activated (min = 0 / max = 7)
 */
-void selectKeyboardColumn(unsigned int column)
-{
-  digitalWrite(T0, column == 0 ? HIGH : LOW);
-  digitalWrite(T1, column == 1 ? HIGH : LOW);
-  digitalWrite(T2, column == 2 ? HIGH : LOW);
-  digitalWrite(T3, column == 3 ? HIGH : LOW);
-  digitalWrite(T4, column == 4 ? HIGH : LOW);
-  digitalWrite(T5, column == 5 ? HIGH : LOW);
-  digitalWrite(T6, column == 6 ? HIGH : LOW);
-  digitalWrite(T7, column == 7 ? HIGH : LOW);
+void selectKeyboardColumn(unsigned int column) {
+
+    digitalWrite(T0, column == 0 ? HIGH : LOW);
+    digitalWrite(T1, column == 1 ? HIGH : LOW);
+    digitalWrite(T2, column == 2 ? HIGH : LOW);
+    digitalWrite(T3, column == 3 ? HIGH : LOW);
+    digitalWrite(T4, column == 4 ? HIGH : LOW);
+    digitalWrite(T5, column == 5 ? HIGH : LOW);
+    digitalWrite(T6, column == 6 ? HIGH : LOW);
+    digitalWrite(T7, column == 7 ? HIGH : LOW);
 }
 
 /*
@@ -182,40 +180,37 @@ void selectKeyboardColumn(unsigned int column)
 
   bra7 mka7 ... bra4 mka4   bra3 mka3 ... bra0 mka0       brb7 mkb7 ... brb4 mkb4   brb3 mkb3 ... brb0 mkb0
 */
-void readAllSwitches(byte* switches)
-{
-  switches[0] = 0;
-  switches[1] = 0;
-  switches[2] = 0;
-  switches[3] = 0;
+void readAllSwitches(byte* switches) {
 
-  for (byte mux = 0; mux <= 7; mux++)
-  {
-    digitalWrite(MUX_A1, (mux & 1) == 0 ? LOW : HIGH);
-    digitalWrite(MUX_A2, (mux & 2) == 0 ? LOW : HIGH);
-    digitalWrite(MUX_A3, (mux & 4) == 0 ? LOW : HIGH);
+    switches[0] = 0;
+    switches[1] = 0;
+    switches[2] = 0;
+    switches[3] = 0;
 
-    int bra = digitalRead(BRA);
-    int mka = digitalRead(MKA);
+    for (byte mux = 0; mux <= 7; mux++) {
+        digitalWrite(MUX_A1, (mux & 1) == 0 ? LOW : HIGH);
+        digitalWrite(MUX_A2, (mux & 2) == 0 ? LOW : HIGH);
+        digitalWrite(MUX_A3, (mux & 4) == 0 ? LOW : HIGH);
 
-    int brb = digitalRead(BRB);
-    int mkb = digitalRead(MKB);
+        int bra = digitalRead(BRA);
+        int mka = digitalRead(MKA);
 
-    if (mux <= 3)
-    {
-      switches[0] |= (mkb << (mux * 2));
-      switches[0] |= (brb << ((mux * 2) + 1));
-      switches[2] |= (mka << (mux * 2));
-      switches[2] |= (bra << ((mux * 2) + 1));
+        int brb = digitalRead(BRB);
+        int mkb = digitalRead(MKB);
+
+        if (mux <= 3) {
+            switches[0] |= (mkb << (mux * 2));
+            switches[0] |= (brb << ((mux * 2) + 1));
+            switches[2] |= (mka << (mux * 2));
+            switches[2] |= (bra << ((mux * 2) + 1));
+
+        } else {
+            switches[1] |= (mkb << ((mux - 4) * 2));
+            switches[1] |= (brb << (((mux - 4) * 2) + 1));
+            switches[3] |= (mka << ((mux - 4) * 2));
+            switches[3] |= (bra << (((mux - 4) * 2) + 1));
+        }
     }
-    else
-    {
-      switches[1] |= (mkb << ((mux - 4) * 2));
-      switches[1] |= (brb << (((mux - 4) * 2) + 1));
-      switches[3] |= (mka << ((mux - 4) * 2));
-      switches[3] |= (bra << (((mux - 4) * 2) + 1));
-    }
-  }
 }
 
 /*
@@ -228,27 +223,27 @@ void readAllSwitches(byte* switches)
 
   col    :  the selected Fatar keyboards column
 */
-void lookForChanges(byte* values, byte col)
-{
-  // make a 32-bit word from 4 bytes
-  unsigned long new_value = values[0] & 0xFF;
-  new_value |= ((unsigned long)values[1]) << 8;
-  new_value |= ((unsigned long)values[2]) << 16;
-  new_value |= ((unsigned long)values[3]) << 24;
+void lookForChanges(byte* values, byte col) {
 
-  unsigned long changed = new_value ^ old_value_g[col];
-  if (changed)
-  {
-    // store new value
-    old_value_g[col] = new_value;
+    // make a 32-bit word from 4 bytes
+    unsigned long new_value = values[0] & 0xFF;
+    new_value |= ((unsigned long)values[1]) << 8;
+    new_value |= ((unsigned long)values[2]) << 16;
+    new_value |= ((unsigned long)values[3]) << 24;
 
-    unsigned long mask = 0x01;
-    for (byte row = 0; row < MATRIX_NB_ROWS; row++, mask <<= 1)
-    {
-      if (changed & mask)
-        notifyToggle(row, col, (new_value & mask) ? CLOSED : OPEN);
+    unsigned long changed = new_value ^ old_value_g[col];
+
+    if (changed) {
+        // store new value
+        old_value_g[col] = new_value;
+
+        unsigned long mask = 0x01;
+
+        for (byte row = 0; row < MATRIX_NB_ROWS; row++, mask <<= 1) {
+            if (changed & mask)
+                notifyToggle(row, col, (new_value & mask) ? CLOSED : OPEN);
+        }
     }
-  }
 }
 
 /*
@@ -264,64 +259,59 @@ void lookForChanges(byte* values, byte col)
 
   closed : true if switch depressed, false if released
 */
-void notifyToggle(byte row, byte col, bool closed)
-{
-  // determine key number, with col[7:0] and row[31:0]
-  // key = 127 to 64 for ukb, 63 to 0 for lkb
-  int key = 8 * (row / 2) + col;
+void notifyToggle(byte row, byte col, bool closed) {
 
-  // determine MIDI channel
-  byte chnl = (key >= 64 ? UPPER : LOWER);
+    // determine key number, with col[7:0] and row[31:0]
+    // key = 127 to 64 for ukb, 63 to 0 for lkb
+    int key = 8 * (row / 2) + col;
 
-  // check if key is assigned to a break switch
-  byte brk = (row & 1); // odd numbers
+    // determine MIDI channel
+    byte chnl = (key >= 64 ? UPPER : LOWER);
 
-  // determine pitch (note number of a 61-note keyboard)
-  // 36 is the lowest C key value of a 5-octave keyboard (C1)
-  // 96 is C6
-  int pitch = (key % 64) + 36;
+    // check if key is assigned to a break switch
+    byte brk = (row & 1);  // odd numbers
 
-  // ensure valid pitch range
-  if (pitch > 96)
-    pitch = 96;
-  else if (pitch < 0)
-    pitch = 0;
+    // determine pitch (note number of a 61-note keyboard)
+    // 36 is the lowest C key value of a 5-octave keyboard (C1)
+    // 96 is C6
+    int pitch = (key % 64) + 36;
 
-  // determine key mask and pointers for access to combined arrays
-  byte key_mask = (1 << (key % 8));
+    // ensure valid pitch range
+    if (pitch > 96)
+        pitch = 96;
+    else if (pitch < 0)
+        pitch = 0;
 
-  byte* note_on_sent = (byte*) &note_on_sent_g[key / 8];
-  byte* note_off_sent = (byte*) &note_off_sent_g[key / 8];
+    // determine key mask and pointers for access to combined arrays
+    byte key_mask = (1 << (key % 8));
 
-  // break contacts do not send MIDI notes, they release the Note On/Off debouncing mechanism
-  if (brk)
-  {
-    if (closed)
-    {
-      *note_on_sent &= ~key_mask;
-      *note_off_sent &= ~key_mask;
+    byte* note_on_sent = (byte*)&note_on_sent_g[key / 8];
+    byte* note_off_sent = (byte*)&note_off_sent_g[key / 8];
+
+    // break contacts do not send MIDI notes, they release the Note On/Off debouncing mechanism
+    if (brk) {
+        if (closed) {
+            *note_on_sent &= ~key_mask;
+            *note_off_sent &= ~key_mask;
+        }
+        return;
     }
-    return;
-  }
 
-  // make switch depressed or released?
-  if (closed)
-  {
-    if (!(*note_on_sent & key_mask))
-    {
-      *note_on_sent |= key_mask;
-      sendNote(chnl, pitch, ON);
-    }
-  }
-  else
-  {
-    if (!(*note_off_sent & key_mask))
-    {
-      *note_off_sent |= key_mask;
-      sendNote(chnl, pitch, OFF);
-    }
-  }
+    // make switch depressed or released?
+    if (closed) {
 
+        if (!(*note_on_sent & key_mask)) {
+            *note_on_sent |= key_mask;
+            sendNote(chnl, pitch, ON);
+        }
+
+    } else {
+
+        if (!(*note_off_sent & key_mask)) {
+            *note_off_sent |= key_mask;
+            sendNote(chnl, pitch, OFF);
+        }
+    }
 }
 
 
@@ -332,11 +322,11 @@ void notifyToggle(byte row, byte col, bool closed)
    pitch     : note value
    on        : note ON if true; OFF otherwise
 */
-void sendNote(byte chnl, byte pitch, bool on)
-{
-  byte bytes[3];
-  bytes[0] = on ? (NOTE_ON | chnl) : (NOTE_OFF | chnl);
-  bytes[1] = pitch;
-  bytes[2] = on ? VELOCITY_MAX : VELOCITY_MIN;
-  Serial.write(bytes, 3);
+void sendNote(byte chnl, byte pitch, bool on) {
+
+    byte bytes[3];
+    bytes[0] = on ? (NOTE_ON | chnl) : (NOTE_OFF | chnl);
+    bytes[1] = pitch;
+    bytes[2] = on ? VELOCITY_MAX : VELOCITY_MIN;
+    Serial.write(bytes, 3);
 }
