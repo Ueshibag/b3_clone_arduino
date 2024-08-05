@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "ArduinoB3Controls",
+			"path": "ArduinoB3Controls"
+		},
+		{
+			"name": "ArduinoB3Drawbars",
+			"path": "ArduinoB3Drawbars"
+		},
+		{
+			"name": "ArduinoB3Keyboards",
+			"path": "ArduinoB3Keyboards"
+		}
+	],
+	"settings": {}
+}
