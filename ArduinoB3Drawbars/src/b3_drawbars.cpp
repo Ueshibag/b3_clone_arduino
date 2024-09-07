@@ -1,6 +1,6 @@
 #include "b3_drawbars.h"
 #include <Arduino.h>
-
+#include <avr/sleep.h>
 
 /*************************************************************************
 	SetBfree Harmonic Drawbars Control.
@@ -112,6 +112,9 @@ void(* reset_func) (void) = 0;
    Arduino program setup. This function is executed only once.
 */
 void setup() {
+
+    // keep drawbars alive
+    sleep_disable();
 
     setup_ctrl_pins();
 

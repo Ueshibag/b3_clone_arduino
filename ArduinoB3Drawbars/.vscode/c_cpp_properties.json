@@ -8,9 +8,9 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/georges/dev/software/arduino/b3-clone/ArduinoB3Drawbars/include",
-                "/home/georges/dev/software/arduino/b3-clone/ArduinoB3Drawbars/src",
-                "/home/georges/dev/software/arduino/b3-clone/ArduinoB3Drawbars/.pio/libdeps/nano_every_b3_drawbars/AUnit/src",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Drawbars/include",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Drawbars/src",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Drawbars/.pio/libdeps/nano_every_b3_drawbars/AUnit/src",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino/api/deprecated",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/variants/nona4809",
@@ -23,9 +23,9 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/georges/dev/software/arduino/b3-clone/ArduinoB3Drawbars/include",
-                    "/home/georges/dev/software/arduino/b3-clone/ArduinoB3Drawbars/src",
-                    "/home/georges/dev/software/arduino/b3-clone/ArduinoB3Drawbars/.pio/libdeps/nano_every_b3_drawbars/AUnit/src",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Drawbars/include",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Drawbars/src",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Drawbars/.pio/libdeps/nano_every_b3_drawbars/AUnit/src",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino/api/deprecated",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/variants/nona4809",

@@ -8,8 +8,9 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/home/georges/dev/arduino/b3-clone/ArduinoB3Keyboards/include",
-                "/home/georges/dev/arduino/b3-clone/ArduinoB3Keyboards/src",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Keyboards/include",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Keyboards/src",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Keyboards/.pio/libdeps/nano_every_b3_keyboards/AUnit/src",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino/api/deprecated",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/variants/nona4809",
@@ -22,8 +23,9 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/home/georges/dev/arduino/b3-clone/ArduinoB3Keyboards/include",
-                    "/home/georges/dev/arduino/b3-clone/ArduinoB3Keyboards/src",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Keyboards/include",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Keyboards/src",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Keyboards/.pio/libdeps/nano_every_b3_keyboards/AUnit/src",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino/api/deprecated",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/variants/nona4809",

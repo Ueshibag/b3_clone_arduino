@@ -12,21 +12,21 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/build/nano_every_local_controls/firmware.elf",
-            "projectEnvName": "nano_every_local_controls",
+            "executable": "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/.pio/build/nano_every_b3_controls/firmware.elf",
+            "projectEnvName": "nano_every_b3_controls",
             "toolchainBinDir": "/home/georges/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": {
                 "type": "PlatformIO",
-                "task": "Pre-Debug (nano_every_local_controls)"
+                "task": "Pre-Debug"
             }
         },
         {
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/build/nano_every_local_controls/firmware.elf",
-            "projectEnvName": "nano_every_local_controls",
+            "executable": "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/.pio/build/nano_every_b3_controls/firmware.elf",
+            "projectEnvName": "nano_every_b3_controls",
             "toolchainBinDir": "/home/georges/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -34,8 +34,8 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
-            "executable": "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/build/nano_every_local_controls/firmware.elf",
-            "projectEnvName": "nano_every_local_controls",
+            "executable": "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/.pio/build/nano_every_b3_controls/firmware.elf",
+            "projectEnvName": "nano_every_b3_controls",
             "toolchainBinDir": "/home/georges/.platformio/packages/toolchain-atmelavr/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "loadMode": "manual"

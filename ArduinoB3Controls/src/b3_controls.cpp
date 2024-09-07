@@ -1,5 +1,6 @@
 #include "b3_controls.h"
 #include <Arduino.h>
+#include <avr/sleep.h>
 
 
 /*************************************************************************
@@ -91,6 +92,9 @@ SerialMock Serialm;
 */
 #ifndef PIO_UNIT_TESTING
 void setup() {
+
+    // keep controls alive
+    sleep_disable();
 
     setup_ctrl_pins();
 

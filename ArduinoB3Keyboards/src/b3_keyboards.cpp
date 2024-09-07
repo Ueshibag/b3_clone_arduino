@@ -1,5 +1,6 @@
 #include "b3_keyboards.h"
 #include <Arduino.h>
+#include <avr/sleep.h>
 
 /******************************************************************
               SetBfree Keyboards Control Firmware
@@ -27,6 +28,9 @@ static byte note_on_sent_g[KEYBOARDS_NB_PINS / 8];
 static byte note_off_sent_g[KEYBOARDS_NB_PINS / 8];
 
 void setup() {
+
+    // keep keyboards alive
+    sleep_disable();
 
     setup_keyboards_ctrl_pins();
 

@@ -8,13 +8,12 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/include",
-                "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/src",
-                "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/libdeps/nano_every_local_controls/AUnit/src",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/include",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/src",
+                "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/.pio/libdeps/nano_every_b3_controls/AUnit/src",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino/api/deprecated",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/variants/nona4809",
-                "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/libdeps/nano_every_local_controls/Unity/src",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/libraries/EEPROM/src",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/libraries/SPI/src",
                 "/home/georges/.platformio/packages/framework-arduino-megaavr/libraries/SoftwareSerial/src",
@@ -24,13 +23,12 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/include",
-                    "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/src",
-                    "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/libdeps/nano_every_local_controls/AUnit/src",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/include",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/src",
+                    "/home/georges/dev/software/arduino/b3_clone_arduino/ArduinoB3Controls/.pio/libdeps/nano_every_b3_controls/AUnit/src",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino/api/deprecated",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/cores/arduino",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/variants/nona4809",
-                    "/media/georges/files/Documents/ArduinoProjects/b3_clone_arduino/ArduinoB3Controls/.pio/libdeps/nano_every_local_controls/Unity/src",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/libraries/EEPROM/src",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/libraries/SPI/src",
                     "/home/georges/.platformio/packages/framework-arduino-megaavr/libraries/SoftwareSerial/src",
@@ -39,7 +37,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=60114",
+                "PLATFORMIO=60115",
                 "ARDUINO_AVR_NANO_EVERY",
                 "AVR_NANO_4809_328MODE",
                 "MILLIS_USE_TIMERB3",
