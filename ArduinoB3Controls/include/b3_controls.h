@@ -29,6 +29,9 @@
 // sent by Raspberry PI to identify the Controls board
 #define CONTROLS_IDENTIFIER "C"
 
+// sent by Raspberry PI to perform last actions before shutting down
+#define SHUTDOWN_CMD "S"
+
 #define DELAY_100_MS 100
 
 // sent by RPI to reset the Arduino
@@ -45,13 +48,6 @@ extern const int VIBRATO_UPPER_LED;
 extern const int VIBRATO_LOWER_SWITCH;
 extern const int VIBRATO_LOWER_LED;
 
-extern const int V1;
-extern const int C1;
-extern const int V2;
-extern const int C2;
-extern const int V3;
-extern const int C3;
-
 extern const int PERC_ON_OFF_LED;
 extern const int PERC_ON_OFF_SWITCH;
 extern const int PERC_VOLUME_LED;
@@ -64,46 +60,13 @@ extern const int EXPR_PEDAL;
 extern const int LESLIE;
 
 
-// Mock Serial object
-class SerialMock {
-public:
-
-    SerialMock() {
-        for (int i=0; i<64; i++)
-            capturedData[i] = 0;
-    }
-
-    void begin(int baudrate) {}
-
-    size_t write(byte buf[], int len) {
-
-        for (int i=0; i<len; i++) {
-            capturedData[i] = buf[i];
-        }
-        return len;
-    }
-
-    size_t readBytes(byte buf[], int len) {
-        
-        for (int i=0; i<len; i++) {
-            buf[i] = capturedData[i];
-        }
-        return len;
-    }
-
-private:
-    byte capturedData[64];
-};
-
-extern SerialMock Serialm;
-
 /*
 * Sets pins mode (input, output, pull-up...)
 */
 void setup_ctrl_pins(void);
 
 /*
-* When the organ is turned on, we want setBfree parameters to be set toinitial
+* When the organ is turned on, we want setBfree parameters to be set to initial
 * hardware controls settings, therefore we have to send the corresponding MIDI
 * messages to the organ emulator.
 * Buttons LEDs shall be switched off.

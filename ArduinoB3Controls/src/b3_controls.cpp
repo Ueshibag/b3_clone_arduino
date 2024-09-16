@@ -7,9 +7,6 @@
  This is the firmware running on the Arduino Nano Every connected to the
  "Vibrato Chorus & Leslie Controls" board.
  
- The commands sent by this Arduino firmware can be checked by running setBfreeUI.
- Tests are launched by pressing the Overdrive push button at least 3 seconds.
-
  Detection of state/level changes on (the ON/OFF state of switches marked
  with * is signaled by a LED.):
 
@@ -57,13 +54,6 @@ const int VIBRATO_UPPER_LED = 3;     // D3
 const int VIBRATO_LOWER_SWITCH = 4;  // D4
 const int VIBRATO_LOWER_LED = 5;     // D5
 
-const int V1 = 6;   // D6
-const int C1 = 7;   // D7
-const int V2 = 8;   // D8
-const int C2 = 9;   // D9
-const int V3 = 10;  // D10
-const int C3 = 11;  // D11
-
 const int PERC_ON_OFF_LED = 12;       // D12
 const int PERC_ON_OFF_SWITCH = 13;    // D13
 const int PERC_VOLUME_LED = 21;       // D21
@@ -79,18 +69,32 @@ const int LESLIE = A0;
 // Allows resetting the Arduino programmatically on reception of RESET_CMD.
 void (*reset_func)(void) = 0;
 
+/*
+  Uses the organ control panel LEDs to confirm we are shutting down.
+  Ensures all LEDs are switched off on shutdown.
+*/
+void b3_shutdown(void) {
 
-#ifdef PIO_UNIT_TESTING
-SerialMock Serialm;
-#endif
+    const int NB_LEDS = 7;
+    const int leds[NB_LEDS] = {OVERDRIVE_LED, VIBRATO_UPPER_LED, VIBRATO_LOWER_LED, PERC_ON_OFF_LED, PERC_VOLUME_LED, PERC_DELAY_LED, PERC_HARM_LED};
 
+    // First, switch off all LEDs.
+    for (int i = 0; i < NB_LEDS; i++) {
+        digitalWrite(leds[i], OFF);
+    }
+
+    // Then, switch them on and off sequentially.
+    for (int i = 0; i < NB_LEDS; i++) {
+        digitalWrite(leds[i], ON);
+        delay(DELAY_100_MS * 2);
+        digitalWrite(leds[i], ON);
+    }
+}
 
 /*
   Called when a sketch starts. Initializes variables, pin modes, start using libraries, etc.
   The setup() function will only run once, after each power up or reset of the Arduino board.
-  Use PIO_UNIT_TESTING guard to avoid collision with test code setup() function.
 */
-#ifndef PIO_UNIT_TESTING
 void setup() {
 
     // keep controls alive
@@ -118,7 +122,7 @@ void setup() {
         toggle_leds(2);
     }
 }
-#endif
+
 
 void setup_ctrl_pins(void) {
 
@@ -126,12 +130,12 @@ void setup_ctrl_pins(void) {
     pinMode(OVERDRIVE_SWITCH, INPUT);
     pinMode(VIBRATO_UPPER_SWITCH, INPUT);
     pinMode(VIBRATO_LOWER_SWITCH, INPUT);
-    pinMode(V1, INPUT_PULLUP);
-    pinMode(C1, INPUT_PULLUP);
-    pinMode(V2, INPUT_PULLUP);
-    pinMode(C2, INPUT_PULLUP);
-    pinMode(V3, INPUT_PULLUP);
-    pinMode(C3, INPUT_PULLUP);
+    pinMode(6, INPUT_PULLUP);
+    pinMode(7, INPUT_PULLUP);
+    pinMode(8, INPUT_PULLUP);
+    pinMode(9, INPUT_PULLUP);
+    pinMode(10, INPUT_PULLUP);
+    pinMode(11, INPUT_PULLUP);
     pinMode(PERC_ON_OFF_SWITCH, INPUT);
     pinMode(PERC_VOLUME_SWITCH, INPUT);
     pinMode(PERC_DELAY_SWITCH, INPUT);
@@ -156,13 +160,7 @@ void set_controls_initial_state() {
     set_overdrive(OFF);
     set_vibrato_upper(OFF);
     set_vibrato_lower(OFF);
-
-    on_vibrato_chorus_change(V1, VIBRATO_V1);
-    on_vibrato_chorus_change(C1, VIBRATO_C1);
-    on_vibrato_chorus_change(V2, VIBRATO_V2);
-    on_vibrato_chorus_change(C2, VIBRATO_C2);
-    on_vibrato_chorus_change(V3, VIBRATO_V3);
-    on_vibrato_chorus_change(C3, VIBRATO_C3);
+    on_vibrato_chorus_change();
 
     set_percussion(OFF);
     set_percussion_volume(NORMAL);
@@ -174,22 +172,23 @@ void set_controls_initial_state() {
 }
 
 /*
- * Software reset occurs when we get the RESET_CMD string of chars.
+  The Raspberry PI can send commands to the Arduino, such as RESET or SHUTDOWN.
 */
-void on_reset()
+void on_rpi_cmd()
 {
     if (Serial.available() == 2) {
         String cmd = Serial.readStringUntil(NEW_LINE);
+
         if (cmd.equals(RESET_CMD))
             reset_func();
+        else if (cmd.equals(SHUTDOWN_CMD))
+            b3_shutdown();
     }
 }
 
 /*
   Endless Arduino program main loop.
-  Use PIO_UNIT_TESTING guard to avoid collision with test code loop() function.
 */
-#ifndef PIO_UNIT_TESTING
 void loop() {
 
     static const unsigned long REFRESH_INTERVAL_MS = 10;
@@ -203,12 +202,7 @@ void loop() {
         on_control_change(VIBRATO_UPPER_SWITCH, set_vibrato_upper);
         on_control_change(VIBRATO_LOWER_SWITCH, set_vibrato_lower);
 
-        on_vibrato_chorus_change(V1, VIBRATO_V1);
-        on_vibrato_chorus_change(C1, VIBRATO_C1);
-        on_vibrato_chorus_change(V2, VIBRATO_V2);
-        on_vibrato_chorus_change(C2, VIBRATO_C2);
-        on_vibrato_chorus_change(V3, VIBRATO_V3);
-        on_vibrato_chorus_change(C3, VIBRATO_C3);
+        on_vibrato_chorus_change();
 
         on_control_change(PERC_ON_OFF_SWITCH, set_percussion);
         on_control_change(PERC_VOLUME_SWITCH, set_percussion_volume);
@@ -218,11 +212,9 @@ void loop() {
         on_leslie_change();
         on_expression_pedal_change();
 
-        on_reset();
+        on_rpi_cmd();
     }
 }
-#endif // PIO_UNIT_TESTING
-
 
 
 void on_control_change(int b3_switch, void (*set_b3_control)(bool)) {
@@ -244,11 +236,7 @@ void on_control_change(int b3_switch, void (*set_b3_control)(bool)) {
         initialized = true;
     }
 
-#ifndef PIO_UNIT_TESTING
     s_new[b3_switch] = digitalRead(b3_switch);
-#else
-    s_new[b3_switch] = !s_new[b3_switch]; // mock button pressed/released
-#endif
 
     if (s_new[b3_switch] != s_old[b3_switch]) {
         if (s_new[b3_switch] == LOW) {
@@ -274,22 +262,40 @@ void set_vibrato_lower(bool on) {
     on ? send_program_change(VIBRATO_LOWER_ON) : send_program_change(VIBRATO_LOWER_OFF);
 }
 
-void on_vibrato_chorus_change(int vc_pin, int vc_prog) {
+void on_vibrato_chorus_change(void) {
     
-    // Since V1 to C3 are 6 consecutive integer values, we can use V1 as offset to index array elements.
-    static int s_old[] = {-1, -1, -1, -1, -1, -1};
-    static int s_new[] = {-1, -1, -1, -1, -1, -1};
+    static int old_vc_pin = -1;
 
-#ifndef PIO_UNIT_TESTING
-    s_new[vc_pin - V1] = digitalRead(vc_pin - V1);
-#else
-    s_new[vc_pin - V1] = !s_new[vc_pin - V1]; // mock button pressed/released
-#endif
+    for (int vc_pin = 6; vc_pin <= 11; vc_pin++) {
 
-    if (s_new[vc_pin - V1] != s_old[vc_pin - V1]) {
-        if (s_new[vc_pin - V1] == LOW)
-            send_program_change(vc_prog);
-        s_old[vc_pin - V1] = s_new[vc_pin - V1];
+        int pin_value = digitalRead(vc_pin);
+
+        if (pin_value == LOW && vc_pin != old_vc_pin) {
+
+            switch (vc_pin) {
+                case 6:
+                    send_program_change(C2);
+                    break;
+                case 7:
+                    send_program_change(V3);
+                    break;
+                case 8:
+                    send_program_change(C3);
+                    break;
+                case 9:
+                    send_program_change(V1);
+                    break;
+                case 10:
+                    send_program_change(C1);
+                    break;
+                case 11:
+                    send_program_change(V2);
+                    break;
+            }
+            
+            old_vc_pin = vc_pin;
+            break; // for
+        }
     }
 }
 
@@ -371,11 +377,7 @@ void send_control_change(byte channel, byte control, byte value) {
     bytes[0] = 0xB0 | channel;
     bytes[1] = control;
     bytes[2] = value;
-#ifdef PIO_UNIT_TESTING
-    Serialm.write(bytes, 3);
-#else
     Serial.write(bytes, 3);
-#endif
 }
 
 void send_program_change(byte program) {
@@ -383,11 +385,7 @@ void send_program_change(byte program) {
     byte bytes[2];
     bytes[0] = 0xC0 | UPPER_MIDI_CHNL;
     bytes[1] = program;
-#ifdef PIO_UNIT_TESTING
-    Serialm.write(bytes, 2);
-#else
     Serial.write(bytes, 2);
-#endif
 }
 
 void toggle_leds(int nb_toggles, int led_idx = -1) {
