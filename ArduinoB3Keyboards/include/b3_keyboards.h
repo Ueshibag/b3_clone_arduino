@@ -120,5 +120,11 @@ void notify_toggle(byte row, byte col, bool closed);
 */
 void send_note(byte chnl, byte pitch, bool on);
 
+/*
+  Periodically sends a dummy MIDI message to the Raspberry to keep the USB connection
+  alive between the Arduino and Raspberry Pi. This prevents the USB port from going into
+  a low-power or sleep state, which can sometimes cause disconnections or communication issues.
+*/
+void send_keepalive(void);
 
 #endif // B3_KEYBOARDS_H

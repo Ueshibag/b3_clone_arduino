@@ -12,19 +12,22 @@ static unsigned long old_value_g[MATRIX_NB_COLS];
 static byte note_on_sent_g[KEYBOARDS_NB_PINS / 8];
 static byte note_off_sent_g[KEYBOARDS_NB_PINS / 8];
 
-// --- NEW: Debounce state machine variables ---
+// Debounce state machine variables
 #define DEBOUNCE_TIME 2  // ms
 enum DebounceState { STABLE_LOW, DEBOUNCING_LOW, STABLE_HIGH, DEBOUNCING_HIGH };
 DebounceState debounce_states[KEYBOARDS_NB_PINS];
 unsigned long debounce_times[KEYBOARDS_NB_PINS];
-// --- END NEW ---
 
-// --- NEW: MIDI buffer variables ---
+// MIDI buffer variables
 #define MIDI_BUFFER_SIZE 32
 byte midi_buffer[MIDI_BUFFER_SIZE][3];
 byte buffer_head = 0;
 byte buffer_tail = 0;
-// --- END NEW ---
+
+
+// USB keep-alive variables
+unsigned long last_keepalive_time = 0;
+#define KEEPALIVE_INTERVAL 10000  // 10 seconds
 
 void setup() {
     sleep_disable();
@@ -34,32 +37,23 @@ void setup() {
 }
 
 void setup_keyboards_ctrl_pins(void) {
-    pinMode(T0, OUTPUT);
-    pinMode(T1, OUTPUT);
-    pinMode(T2, OUTPUT);
-    pinMode(T3, OUTPUT);
-    pinMode(T4, OUTPUT);
-    pinMode(T5, OUTPUT);
-    pinMode(T6, OUTPUT);
-    pinMode(T7, OUTPUT);
-    digitalWrite(T0, LOW);
-    digitalWrite(T1, LOW);
-    digitalWrite(T2, LOW);
-    digitalWrite(T3, LOW);
-    digitalWrite(T4, LOW);
-    digitalWrite(T5, LOW);
-    digitalWrite(T6, LOW);
-    digitalWrite(T7, LOW);
-    pinMode(BRA, INPUT);
-    pinMode(MKA, INPUT);
-    pinMode(BRB, INPUT);
-    pinMode(MKB, INPUT);
-    pinMode(MUX_A1, OUTPUT);
-    pinMode(MUX_A2, OUTPUT);
-    pinMode(MUX_A3, OUTPUT);
-    digitalWrite(MUX_A1, LOW);
-    digitalWrite(MUX_A2, LOW);
-    digitalWrite(MUX_A3, LOW);
+
+    // Set T0-T7 as OUTPUT and LOW
+    for (int i = T0; i <= T7; i++) {
+        pinMode(i, OUTPUT);
+        digitalWrite(i, LOW);
+    }
+    // Set BRA, MKA, BRB, MKB as INPUT
+    const int input_pins[] = {BRA, MKA, BRB, MKB};
+    for (int i = 0; i < 4; i++) {
+        pinMode(input_pins[i], INPUT);
+    }
+    // Set MUX_A1, MUX_A2, MUX_A3 as OUTPUT and LOW
+    const int mux_pins[] = {MUX_A1, MUX_A2, MUX_A3};
+    for (int i = 0; i < 3; i++) {
+        pinMode(mux_pins[i], OUTPUT);
+        digitalWrite(mux_pins[i], LOW);
+    }
 }
 
 void init_keyboards(void) {
@@ -70,12 +64,11 @@ void init_keyboards(void) {
         note_on_sent_g[i] = 0x00;
         note_off_sent_g[i] = 0x00;
     }
-    // --- NEW: Initialize debounce states ---
+    // Initialize debounce states
     for (int i = 0; i < KEYBOARDS_NB_PINS; i++) {
         debounce_states[i] = STABLE_LOW;
         debounce_times[i] = 0;
     }
-    // --- END NEW ---
 }
 
 void loop() {
@@ -84,7 +77,7 @@ void loop() {
     if (time == 0)
         time = micros();
     unsigned long curTime = micros();
-    if (curTime > time + 100) {  // Original 100µs loop period
+    if (curTime > time + 100) {  // 100µs loop period
         select_keyboard_column(active_column);
         byte switches[4];
         read_all_switches(switches);
@@ -93,12 +86,17 @@ void loop() {
         if (++active_column >= MATRIX_NB_COLS)
             active_column = 0;
     }
-    // --- NEW: Send buffered MIDI messages ---
+    // Send buffered MIDI messages
     while (buffer_tail != buffer_head) {
         Serial.write(midi_buffer[buffer_tail], 3);
         buffer_tail = (buffer_tail + 1) % MIDI_BUFFER_SIZE;
     }
-    // --- END NEW ---
+
+    // Send dummy MIDI message every 10 seconds
+    if (millis() - last_keepalive_time >= KEEPALIVE_INTERVAL) {
+        send_keepalive();
+        last_keepalive_time = millis();
+    }
 }
 
 void select_keyboard_column(unsigned int column) {
@@ -168,7 +166,7 @@ void notify_toggle(byte row, byte col, bool closed) {
     byte* note_on_sent = (byte*)&note_on_sent_g[key / 8];
     byte* note_off_sent = (byte*)&note_off_sent_g[key / 8];
 
-    // --- NEW: Debounce state machine ---
+    // Debounce state machine
     unsigned long now = millis();
     bool debounced_state = false;
 
@@ -231,7 +229,6 @@ void notify_toggle(byte row, byte col, bool closed) {
             }
         }
     }
-    // --- END NEW ---
 }
 
 void send_note(byte chnl, byte pitch, bool on) {
@@ -239,11 +236,19 @@ void send_note(byte chnl, byte pitch, bool on) {
     bytes[0] = on ? (NOTE_ON | chnl) : (NOTE_OFF | chnl);
     bytes[1] = pitch;
     bytes[2] = on ? VELOCITY_MAX : VELOCITY_MIN;
-    // --- NEW: Buffer MIDI messages ---
+
+    // Buffer MIDI messages ---
     midi_buffer[buffer_head][0] = bytes[0];
     midi_buffer[buffer_head][1] = bytes[1];
     midi_buffer[buffer_head][2] = bytes[2];
     buffer_head = (buffer_head + 1) % MIDI_BUFFER_SIZE;
-    // --- END NEW ---
 }
 
+
+void send_keepalive(void) {
+    byte bytes[3] = {0x80, 0x00, 0x00};  // Note Off for note 0, velocity 0 (dummy message)
+    midi_buffer[buffer_head][0] = bytes[0];
+    midi_buffer[buffer_head][1] = bytes[1];
+    midi_buffer[buffer_head][2] = bytes[2];
+    buffer_head = (buffer_head + 1) % MIDI_BUFFER_SIZE;
+}
