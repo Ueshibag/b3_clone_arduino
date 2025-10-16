@@ -87,7 +87,7 @@ void b3_shutdown(void) {
     for (int i = 0; i < NB_LEDS; i++) {
         digitalWrite(leds[i], ON);
         delay(DELAY_100_MS * 2);
-        digitalWrite(leds[i], ON);
+        digitalWrite(leds[i], OFF);
     }
 }
 
@@ -176,7 +176,7 @@ void set_controls_initial_state() {
 */
 void on_rpi_cmd()
 {
-    if (Serial.available() == 2) {
+    if (Serial.available() > 0) {
         String cmd = Serial.readStringUntil(NEW_LINE);
 
         if (cmd.equals(RESET_CMD))
